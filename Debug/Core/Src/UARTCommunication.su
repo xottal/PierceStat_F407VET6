@@ -1,0 +1,6 @@
+../Core/Src/UARTCommunication.c:10:8:str_split	56	static
+../Core/Src/UARTCommunication.c:58:6:UARTtransmit	24	static
+../Core/Src/UARTCommunication.c:63:6:UARTget	40	static
+../Core/Src/UARTCommunication.c:108:6:UARTset	24	static
+../Core/Src/UARTCommunication.c:149:6:UARTtransmitNum	16	static
+../Core/Src/UARTCommunication.c:154:6:commandSearch	40	static

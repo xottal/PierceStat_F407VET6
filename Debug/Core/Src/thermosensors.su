@@ -1,0 +1,2 @@
+../Core/Src/thermosensors.c:10:7:getTemp3455	32	static
+../Core/Src/thermosensors.c:26:7:getTempPt1000	32	static
