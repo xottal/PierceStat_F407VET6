@@ -7,6 +7,14 @@
 
 #include "UARTCommunication.h"
 
+uint8_t RXbuffer[128];
+uint8_t TXbuffer[128];
+char delim = ';';
+char EOL = '\n';
+uint16_t TXtimeout = 1000;
+uint8_t RXbufferChar[1];
+uint8_t RXbufferElem = 0;
+
 char** str_split(char* a_str, const char a_delim)
 {
     char** result    = 0;
@@ -56,7 +64,7 @@ char** str_split(char* a_str, const char a_delim)
 }
 
 void UARTtransmit(char* string) {
-	uint16_t size = sprintf(TXbuffer, "%s%c",string, EOL);
+	uint16_t size = sprintf((char*)TXbuffer, "%s%c",string, EOL);
 	HAL_UART_Transmit(&huart1, TXbuffer, size, TXtimeout);
 }
 
@@ -65,36 +73,36 @@ bool UARTget(uint16_t com) {
 		valueTypes value = params[paramTable[com]-1]->get();
 		switch(params[paramTable[com]-1]->type) {
 		case UINT8_T:
-			sprintf(TXbuffer, "$%u:%u",com, value.val_uint8_t);
-			UARTtransmit(TXbuffer);
+			sprintf((char*)TXbuffer, "$%u:%u",com, value.val_uint8_t);
+			UARTtransmit((char*)TXbuffer);
 			break;
 		case UINT16_T:
-				sprintf(TXbuffer, "$%u:%u",com,value.val_uint16_t);
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%u",com,value.val_uint16_t);
+				UARTtransmit((char*)TXbuffer);
 				break;
 		case UINT32_T:
-				sprintf(TXbuffer, "$%u:%u",com, value.val_uint32_t);
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%lu",com, value.val_uint32_t);
+				UARTtransmit((char*)TXbuffer);
 				break;
 		case INT8_T:
-				sprintf(TXbuffer, "$%u:%d",com, value.val_int8_t);
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%d",com, value.val_int8_t);
+				UARTtransmit((char*)TXbuffer);
 				break;
 		case INT16_T:
-				sprintf(TXbuffer, "$%u:%d",com, value.val_int16_t);
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%d",com, value.val_int16_t);
+				UARTtransmit((char*)TXbuffer);
 				break;
 		case INT32_T:
-				sprintf(TXbuffer, "$%u:%d",com, value.val_int32_t);
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%ld",com, value.val_int32_t);
+				UARTtransmit((char*)TXbuffer);
 				break;
 		case FLOAT:
-				sprintf(TXbuffer, "$%u:%f",com, value.val_float);
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%f",com, value.val_float);
+				UARTtransmit((char*)TXbuffer);
 				break;
 		case BOOL:
-				sprintf(TXbuffer, "$%u:%s",com, value.val_bool ? "true" : "false");
-				UARTtransmit(TXbuffer);
+				sprintf((char*)TXbuffer, "$%u:%s",com, value.val_bool ? "true" : "false");
+				UARTtransmit((char*)TXbuffer);
 				break;
 		}
 		return true;
@@ -116,54 +124,50 @@ bool UARTset(uint16_t com, char* str) {
 	valueTypes value;
 	switch(params[paramTable[com] - 1]->type) {
 	case UINT8_T:
-		sscanf(str, "%u", &value);
+		sscanf(str, "%c", &value.val_uint8_t);
 		break;
 	case UINT16_T:
-		sscanf(str, "%u", &value);
+		sscanf(str, "%hu", &value.val_uint16_t);
 		break;
 	case UINT32_T:
-		sscanf(str, "%u", &value);
+		sscanf(str, "%lu", &value.val_uint32_t);
 		break;
 	case INT8_T:
-		sscanf(str, "%d", &value);
+		sscanf(str, "%c", &value.val_int8_t);
 		break;
 	case INT16_T:
-		sscanf(str, "%d", &value);
+		sscanf(str, "%hd", &value.val_int16_t);
 		break;
 	case INT32_T:
-		sscanf(str, "%d", &value);
+		sscanf(str, "%ld", &value.val_int32_t);
 		break;
 	case FLOAT:
-		sscanf(str, "%f", &value);
+		sscanf(str, "%f", &value.val_float);
 		break;
 	case BOOL:
 		value = (valueTypes)(bool)!strcmp(str, "true");
 		break;
 	}
 	bool setRes = params[paramTable[com]-1]->set((valueTypes)value);
-	sprintf(TXbuffer, "$%u:%s",com, setRes ? "Y" : "N");
-	UARTtransmit(TXbuffer);
+	sprintf((char*)TXbuffer, "$%u:%s",com, setRes ? "Y" : "N");
+	UARTtransmit((char*)TXbuffer);
 	return setRes;
 }
 
 void UARTtransmitNum(int com, char* string) {
-	sprintf(TXbuffer, "%d:%s",com, string);
-	UARTtransmit(TXbuffer);
+	sprintf((char*)TXbuffer, "%d:%s",com, string);
+	UARTtransmit((char*)TXbuffer);
 }
 
 void commandSearch() {
-//TODO
-
 	char** commands;
-	commands = str_split(RXbufferLong, delim);
+	commands = str_split((char*)RXbuffer, delim);
 	if (commands)
 	{
 		int i;
 		for (i = 0; *(commands + i); i++)
 		{
 			char* command = *(commands + i);
-			sprintf(TXbuffer, "command%d=[%s]",i, command);
-			UARTtransmit(TXbuffer); // echo
 			if(strlen(command) < 5) {
 				UARTtransmit("Error\%invalid command style");
 			} else if(!strcmp(command, "*IDN?")) {
@@ -202,4 +206,18 @@ void commandSearch() {
 		printf("\n");
 		free(commands);
 	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+    if(RXbufferChar[0] != EOL) {
+    	RXbuffer[RXbufferElem] = RXbufferChar[0];
+    	RXbufferElem++;
+    }
+    else {
+    	RXbuffer[RXbufferElem] = '\0';
+    	commandSearch();
+    	RXbufferElem = 0;
+    }
+    HAL_UART_Receive_IT(&huart1, RXbufferChar, 1);
 }

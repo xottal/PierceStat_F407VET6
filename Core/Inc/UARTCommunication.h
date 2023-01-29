@@ -22,14 +22,12 @@ bool UARTget(uint16_t com);
 bool UARTset(uint16_t com, char* str);
 void commandSearch();
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart);
+
 extern char IDNstring[];
 extern UART_HandleTypeDef huart1;
 
+extern uint8_t RXbufferChar[1];
 
-extern uint8_t RXbufferLong[];
-static uint8_t TXbuffer[128];
-static char delim = ';';
-static char EOL = '\n';
-static uint16_t TXtimeout = 1000;
 
 #endif /* INC_UARTCOMMUNICATION_H_ */

@@ -27,6 +27,8 @@
 #include "Parameters.h"
 #include "UARTCommunication.h"
 #include "thermosensors.h"
+#include "flashManag.h"
+
 
 /* USER CODE END Includes */
 
@@ -64,17 +66,12 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 //Freq counter variables
-float MOfreq = 8000378; //Hz
+float TimerFreq = 84e6; //Freq of TIM2
+uint16_t counterPeriod = 0; //Update period of TIM1 (init in main)
+uint32_t counterValue = 0; //TIM2 clock counter value (update in TIM1 interrupt)
 
-
-uint32_t counterValue = 0;
-float freq = 0;
-
-//UART
+//UART variables
 char IDNstring[] = "PierceStat: AssPirates 2023 (CockPit)";
-uint8_t RXbufferLong[128];
-uint8_t RXbuffer[1];
-uint8_t RXbufferElem = 0;
 
 //Buffer for Voltage and Current Measurements
 uint16_t dmaADC1buffer[6];
@@ -85,6 +82,10 @@ uint16_t dmaADC2buffer[4];
 uint32_t freq_PWM_MO = 84000000; //Hz
 uint32_t freq_PWM_CH1 = 100000; //Hz
 uint32_t freq_PWM_CH2 = 100000; //Hz
+
+
+
+
 
 /* USER CODE END PV */
 
@@ -110,8 +111,7 @@ static void MX_IWDG_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-float TimerFreq = 0;
-uint16_t counterPeriod = 0;
+
 
 /* USER CODE END 0 */
 
@@ -156,34 +156,44 @@ int main(void)
   MX_TIM6_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-  TimerFreq = MOfreq * 10.5;
-  counterPeriod = __HAL_TIM_GET_AUTORELOAD(&htim1);
 
-  HAL_TIM_Base_Start(&htim2);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  //Global 100us clock start (RTC - 120 hours limit)
+  HAL_TIM_Base_Start(&htim5);
+
+  //Gate PWMs init
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);//Set_U_Heater PWM (10 kHz, 16800)
-
+  //Set_U_Heater PWM (10 kHz, 16800)
+  HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
+  //Timer @84MHz for clock reference
+  HAL_TIM_Base_Start(&htim2);
+  //External clock source for counter
+  counterPeriod = __HAL_TIM_GET_AUTORELOAD(&htim1);
   __HAL_TIM_CLEAR_IT(&htim1,TIM_IT_UPDATE);
   HAL_TIM_Base_Start_IT(&htim1);
-  HAL_TIM_Base_Start_IT(&htim6);
-  HAL_UART_Receive_IT(&huart1, RXbuffer, 1);
+
+  //ADC DMA start (10 channels)
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)dmaADC1buffer, 6);
   HAL_ADC_Start_DMA(&hadc2, (uint32_t*)dmaADC2buffer, 4);
 
+  //100ms interrupt for ADC and other staff
+  __HAL_TIM_CLEAR_IT(&htim6,TIM_IT_UPDATE);
+  HAL_TIM_Base_Start_IT(&htim6);
 
+  //UART interrupt enabling
+  HAL_UART_Receive_IT(&huart1, RXbufferChar, 1);
 
   //Heater PWM init
   __HAL_TIM_SET_PRESCALER(&htim3, 0);
   __HAL_TIM_SET_AUTORELOAD(&htim3, freq_PWM_MO/freq_PWM_CH1 - 1);
   __HAL_TIM_SET_PRESCALER(&htim4, 0);
   __HAL_TIM_SET_AUTORELOAD(&htim4, freq_PWM_MO/freq_PWM_CH2 - 1);
-
-
-
+  //Init flash reading
+  InitVirtAddTab();
+  //SaveToFlash();
+  ReadFlash();
 
 
   /* USER CODE END 2 */
@@ -192,8 +202,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 while (1)
 {
-	//HAL_ADC_Start_IT(&hadc1);
-
+	//Watch dog reset
 	HAL_IWDG_Refresh(&hiwdg);
 	//Heater PWM
 	float dutyCH1 = getPWM_CH1().val_float/100.0;
@@ -477,7 +486,7 @@ static void MX_IWDG_Init(void)
 
   /* USER CODE END IWDG_Init 1 */
   hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_4;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_16;
   hiwdg.Init.Reload = 4095;
   if (HAL_IWDG_Init(&hiwdg) != HAL_OK)
   {
@@ -759,7 +768,7 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 84-1;
+  htim5.Init.Prescaler = 8400-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim5.Init.Period = 4294967295;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -1018,7 +1027,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	if(htim == &htim1) {
 		//HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_11);
 		uint32_t temp = __HAL_TIM_GET_COUNTER(&htim2);
-		freq = ((float)counterPeriod + 1) / (temp - counterValue) * TimerFreq;
+		float freq = ((float)counterPeriod + 1) / (temp - counterValue) * TimerFreq;
 		setFreq((valueTypes)freq);
 		counterValue = temp;
 
@@ -1039,21 +1048,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-{
-    if(RXbuffer[0] != EOL) {
-    	RXbufferLong[RXbufferElem] = RXbuffer[0];
-    	RXbufferElem++;
-    }
-    else {
-    	RXbufferLong[RXbufferElem] = '\0';
-    	commandSearch();
-    	RXbufferElem = 0;
-    }
-    HAL_UART_Receive_IT(&huart1, RXbuffer, 1);
-}
-
-
 /* USER CODE END 4 */
 
 /**
@@ -1067,6 +1061,7 @@ void Error_Handler(void)
   __disable_irq();
   while (1)
   {
+	  UARTtransmit("Hard fault! Something went wrong.");
   }
   /* USER CODE END Error_Handler_Debug */
 }

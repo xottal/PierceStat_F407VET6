@@ -26,6 +26,7 @@ typedef union {
     int32_t val_int32_t;
     float val_float;
     bool val_bool;
+    uint16_t flashType[2];
 } valueTypes;
 
 typedef struct {
@@ -34,6 +35,7 @@ typedef struct {
     types type; //Ref to typeList
     bool isCommand; //Является виртуальной командой или хранит значение
     bool readOnly; //Хранимое значение редактируется через UART?
+    bool isFlash; //Хранить во flash?
     valueTypes (*get)();
     bool (*set)(valueTypes);
     void (*command)();
@@ -190,6 +192,7 @@ valueTypes getFreq();
 
 void InitParams();
 void commandParamList();
+void commandSaveFlash();
 
 
 #endif /* INC_PARAMETERS_H_ */
