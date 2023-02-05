@@ -49,17 +49,17 @@ extern uint8_t paramTable[PARAMS_RANGE];
 
 void InitParams();
 
-bool setU_PowerSet(valueTypes value);
-valueTypes getU_PowerSet(void);
+bool setU_HeaterSet(valueTypes value);
+valueTypes getU_HeaterSet(void);
 
-bool setU_PowerMin(valueTypes value);
-valueTypes getU_PowerMin(void);
+bool setU_HeaterMin(valueTypes value);
+valueTypes getU_HeaterMin(void);
 
-bool setU_PowerMax(valueTypes value);
-valueTypes getU_PowerMax(void);
+bool setU_HeaterMax(valueTypes value);
+valueTypes getU_HeaterMax(void);
 
-bool setU_PowerOnOff(valueTypes state);
-valueTypes getU_PowerOnOff(void);
+bool setU_HeaterOnOff(valueTypes state);
+valueTypes getU_HeaterOnOff(void);
 
 bool setU_24Vmeas(valueTypes value);
 valueTypes getU_24Vmeas(void);
@@ -67,11 +67,17 @@ valueTypes getU_24Vmeas(void);
 bool setU_24Vcoeff(valueTypes value);
 valueTypes getU_24Vcoeff(void);
 
-bool setU_PowerMeas(valueTypes value);
-valueTypes getU_PowerMeas();
+bool setU_HeaterMeas(valueTypes value);
+valueTypes getU_HeaterMeas();
 
-bool setU_PowerCoeff(valueTypes value);
-valueTypes getU_PowerCoeff(void);
+bool setU_HeaterCoeff(valueTypes value);
+valueTypes getU_HeaterCoeff(void);
+
+bool setU_24V_Min(valueTypes value);
+valueTypes getU_24V_Min(void);
+
+bool setU_24V_Max(valueTypes value);
+valueTypes getU_24V_Max(void);
 
 bool setI_1A(valueTypes value);
 valueTypes getI_1A();
@@ -81,6 +87,15 @@ bool setI_2A(valueTypes value);
 valueTypes getI_2A();
 bool setI_2B(valueTypes value);
 valueTypes getI_2B();
+
+bool setI_1A_Max(valueTypes value);
+valueTypes getI_1A_Max(void);
+bool setI_1B_Max(valueTypes value);
+valueTypes getI_1B_Max(void);
+bool setI_2A_Max(valueTypes value);
+valueTypes getI_2A_Max(void);
+bool setI_2B_Max(valueTypes value);
+valueTypes getI_2B_Max(void);
 
 bool setI_1A_Coeff(valueTypes value);
 valueTypes getI_1A_Coeff(void);
@@ -108,6 +123,24 @@ bool setTemp3_coeff(valueTypes value);
 valueTypes getTemp3_coeff(void);
 bool setTemp4_coeff(valueTypes value);
 valueTypes getTemp4_coeff(void);
+
+bool setTemp1_Min(valueTypes value);
+valueTypes getTemp1_Min(void);
+bool setTemp1_Max(valueTypes value);
+valueTypes getTemp1_Max(void);
+bool setTemp2_Min(valueTypes value);
+valueTypes getTemp2_Min(void);
+bool setTemp2_Max(valueTypes value);
+valueTypes getTemp2_Max(void);
+bool setTemp3_Min(valueTypes value);
+valueTypes getTemp3_Min(void);
+bool setTemp3_Max(valueTypes value);
+valueTypes getTemp3_Max(void);
+bool setTemp4_Min(valueTypes value);
+valueTypes getTemp4_Min(void);
+bool setTemp4_Max(valueTypes value);
+valueTypes getTemp4_Max(void);
+
 
 bool setLoadSelect1(valueTypes state);
 valueTypes getLoadSelect1(void);
@@ -155,6 +188,11 @@ valueTypes getDcoeff1Freq(void);
 bool setDcoeff2Freq(valueTypes value);
 valueTypes getDcoeff2Freq(void);
 
+bool setTempCh1Set(valueTypes value);
+valueTypes getTempCh1Set();
+bool setTempCh2Set(valueTypes value);
+valueTypes getTempCh2Set();
+
 bool setI1Set(valueTypes value);
 valueTypes getI1Set(void);
 bool setI2Set(valueTypes value);
@@ -189,6 +227,8 @@ valueTypes getCH2_Polarity(void);
 
 bool setFreq(valueTypes value);
 valueTypes getFreq();
+bool setFreqSet(valueTypes value);
+valueTypes getFreqSet();
 
 void InitParams();
 void commandParamList();

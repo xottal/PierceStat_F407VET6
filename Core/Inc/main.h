@@ -108,6 +108,7 @@ void Error_Handler(void);
 #define Disable_DC_DC_GPIO_Port GPIOC
 #define Gates2_B_Dis_Pin GPIO_PIN_3
 #define Gates2_B_Dis_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

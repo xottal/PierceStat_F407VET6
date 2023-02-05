@@ -28,6 +28,7 @@
 #include "UARTCommunication.h"
 #include "thermosensors.h"
 #include "flashManag.h"
+#include "PID.h"
 
 
 /* USER CODE END Includes */
@@ -39,6 +40,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define FALSE (valueTypes)(bool)false
+#define TRUE (valueTypes)(bool)true
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -157,6 +160,10 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  //Init flash reading
+  InitVirtAddTab();
+  ReadFlash(); //time consuming
+
   //Global 100us clock start (RTC - 120 hours limit)
   HAL_TIM_Base_Start(&htim5);
 
@@ -190,10 +197,7 @@ int main(void)
   __HAL_TIM_SET_AUTORELOAD(&htim3, freq_PWM_MO/freq_PWM_CH1 - 1);
   __HAL_TIM_SET_PRESCALER(&htim4, 0);
   __HAL_TIM_SET_AUTORELOAD(&htim4, freq_PWM_MO/freq_PWM_CH2 - 1);
-  //Init flash reading
-  InitVirtAddTab();
-  //SaveToFlash();
-  ReadFlash();
+
 
 
   /* USER CODE END 2 */
@@ -204,42 +208,12 @@ while (1)
 {
 	//Watch dog reset
 	HAL_IWDG_Refresh(&hiwdg);
-	//Heater PWM
-	float dutyCH1 = getPWM_CH1().val_float/100.0;
-	if(getCH1_Polarity().val_bool == false) {
-		dutyCH1 = dutyCH1*(-1.0);
-	}
 
-	if(dutyCH1 > 0) {
-		setGateH1A((valueTypes)(bool)false);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, freq_PWM_MO/freq_PWM_CH1 * dutyCH1 - 1);
-		setGateH1B((valueTypes)(bool)true);
-	}
-	else {
-		setGateH1B((valueTypes)(bool)false);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, freq_PWM_MO/freq_PWM_CH1 * (-dutyCH1) + 1);
-		setGateH1A((valueTypes)(bool)true);
-	}
 
-	float dutyCH2 = getPWM_CH2().val_float/100.0;
-	if(getCH2_Polarity().val_bool == false) {
-		dutyCH2 = dutyCH1*(-1.0);
-	}
 
-	if(dutyCH2 > 0) {
-		setGateH2A((valueTypes)(bool)false);
-		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 0);
-		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, freq_PWM_MO/freq_PWM_CH2 * dutyCH2 - 1);
-		setGateH2B((valueTypes)(bool)true);
-	}
-	else {
-		setGateH2B((valueTypes)(bool)false);
-		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
-		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, freq_PWM_MO/freq_PWM_CH2 * (-dutyCH2) + 1);
-		setGateH2A((valueTypes)(bool)true);
-	}
+
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -977,19 +951,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GateH1_A_Pin|GateH1_B_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GateH1_A_Pin|GateH1_B_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, Gates1_A_Dis_Pin|Gates1_B_Dis_Pin|Gates2_A_Dis_Pin|Gates2_B_Dis_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, Gates1_A_Dis_Pin|Gates1_B_Dis_Pin|Gates2_A_Dis_Pin|Gates2_B_Dis_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_11, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, GateH2_A_Pin|GateH2_B_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, GateH2_A_Pin|GateH2_B_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Disable_DC_DC_GPIO_Port, Disable_DC_DC_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(Disable_DC_DC_GPIO_Port, Disable_DC_DC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : GateH1_A_Pin GateH1_B_Pin Disable_DC_DC_Pin */
   GPIO_InitStruct.Pin = GateH1_A_Pin|GateH1_B_Pin|Disable_DC_DC_Pin;
@@ -1005,13 +976,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PE11 */
-  GPIO_InitStruct.Pin = GPIO_PIN_11;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
-
   /*Configure GPIO pins : GateH2_A_Pin GateH2_B_Pin */
   GPIO_InitStruct.Pin = GateH2_A_Pin|GateH2_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -1025,7 +989,6 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 	if(htim == &htim1) {
-		//HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_11);
 		uint32_t temp = __HAL_TIM_GET_COUNTER(&htim2);
 		float freq = ((float)counterPeriod + 1) / (temp - counterValue) * TimerFreq;
 		setFreq((valueTypes)freq);
@@ -1034,7 +997,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	}
 	else if(htim == &htim6) {
 		setU_24Vmeas((valueTypes)(dmaADC1buffer[0] * getU_24Vcoeff().val_float));
-		setU_PowerMeas((valueTypes)(dmaADC1buffer[1] * getU_PowerCoeff().val_float));
+		setU_HeaterMeas((valueTypes)(dmaADC1buffer[1] * getU_HeaterCoeff().val_float));
 		setI_1A((valueTypes)(dmaADC1buffer[2] * getI_1A_Coeff().val_float));
 		setI_1B((valueTypes)(dmaADC1buffer[3] * getI_1B_Coeff().val_float));
 		setI_2A((valueTypes)(dmaADC1buffer[4] * getI_2A_Coeff().val_float));
@@ -1044,6 +1007,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		setTemp2((valueTypes)(getTemp3455(dmaADC2buffer[1] * getTemp2_coeff().val_float)));
 		setTemp3((valueTypes)(getTempPt1000(dmaADC2buffer[2] * getTemp3_coeff().val_float)));
 		setTemp4((valueTypes)(getTempPt1000(dmaADC2buffer[3] * getTemp4_coeff().val_float)));
+
+		setPWM();
 	}
 
 }

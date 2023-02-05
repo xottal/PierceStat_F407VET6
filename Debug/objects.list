@@ -1,3 +1,4 @@
+"./Core/Src/PID.o"
 "./Core/Src/Parameters.o"
 "./Core/Src/UARTCommunication.o"
 "./Core/Src/eeprom.o"

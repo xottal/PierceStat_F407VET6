@@ -30,10 +30,17 @@ void ReadFlash() {
 	for(uint8_t i = 0; i < PARAMS_COUNT; i++) {
 		if(params[i]->isFlash == true) {
 			uint16_t var[2];
-			EE_ReadVariable(VirtAddVarTab[counter++], &var[0]);
-			EE_ReadVariable(VirtAddVarTab[counter++], &var[1]);
-			params[i]->value.flashType[0] = var[0];
-			params[i]->value.flashType[1] = var[1];
+			uint16_t flag = 0;
+			flag += EE_ReadVariable(VirtAddVarTab[counter++], &var[0]);
+			flag += EE_ReadVariable(VirtAddVarTab[counter++], &var[1]);
+			if(flag != 0) { //First start up of new firmware (no flash data)
+				SaveToFlash();
+				return;
+			}
+			else {
+				params[i]->value.flashType[0] = var[0];
+				params[i]->value.flashType[1] = var[1];
+			}
 		}
 	}
 }

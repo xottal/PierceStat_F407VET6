@@ -7,6 +7,8 @@
 
 #include "main.h"
 #include "Parameters.h"
+#include "flashManag.h"
+#include "PID.h"
 
 
 ParStruct* params[PARAMS_COUNT];
@@ -25,41 +27,41 @@ ParStruct SaveFlash = {		.commandNumber = 110,
                             .isCommand = true,
 							.command = commandSaveFlash};
 
-ParStruct U_PowerSet = {	.commandNumber = 150,
-                            .commandDescription = "Set U_Power",
+ParStruct U_HeaterSet = {	.commandNumber = 150,
+                            .commandDescription = "Set U_Heater @V",
                             .type = FLOAT,
 							.isFlash = true,
-							.get = getU_PowerSet,
-							.set = setU_PowerSet,
+							.get = getU_HeaterSet,
+							.set = setU_HeaterSet,
                             .value.val_float = 12.0,
 							.valueAbsMin.val_float = 3.9,
 							.valueAbsMax.val_float = 24.1};
-ParStruct U_PowerMin = {	.commandNumber = 151,
-                            .commandDescription = "Set U_Power Min Alarm",
+ParStruct U_HeaterMin = {	.commandNumber = 151,
+                            .commandDescription = "U_Heater Min Alarm @V",
                             .type = FLOAT,
 							.isFlash = true,
-							.get = getU_PowerMin,
-							.set = setU_PowerMin,
+							.get = getU_HeaterMin,
+							.set = setU_HeaterMin,
                             .value.val_float = 3.9,
                             .valueAbsMin.val_float = 3.9,
                             .valueAbsMax.val_float = 22.0};
-ParStruct U_PowerMax = {	.commandNumber = 152,
-                            .commandDescription = "Set U_Power Max Alarm",
+ParStruct U_HeaterMax = {	.commandNumber = 152,
+                            .commandDescription = "U_Heater Max Alarm @V",
                             .type = FLOAT,
 							.isFlash = true,
-							.get = getU_PowerMax,
-							.set = setU_PowerMax,
+							.get = getU_HeaterMax,
+							.set = setU_HeaterMax,
                             .value.val_float = 24.1,
                             .valueAbsMin.val_float = 6.0,
                             .valueAbsMax.val_float = 24.1};
-ParStruct U_PowerOnOff = {.commandNumber = 153,
-                            .commandDescription = "U_Power On Off",
+ParStruct U_HeaterOnOff = {.commandNumber = 153,
+                            .commandDescription = "U_Heater On Off",
                             .type = BOOL,
-							.get = getU_PowerOnOff,
-							.set = setU_PowerOnOff,
+							.get = getU_HeaterOnOff,
+							.set = setU_HeaterOnOff,
                             .value.val_bool = false};
 ParStruct U_24Vmeas = {.commandNumber = 200,
-                            .commandDescription = "24V input measure",
+                            .commandDescription = "24V input measure @V",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getU_24Vmeas,
@@ -74,41 +76,59 @@ ParStruct U_24Vcoeff = {.commandNumber = 201,
                             .value.val_float = 0.0116,
                             .valueAbsMin.val_float = 0.001,
                             .valueAbsMax.val_float = 1.0};
-ParStruct U_PowerMeas = {.commandNumber = 202,
-                            .commandDescription = "U_Power measure",
+ParStruct U_HeaterMeas = {.commandNumber = 202,
+                            .commandDescription = "U_Heater measure @V",
                             .type = FLOAT,
-							.get = getU_PowerMeas,
-							.set = setU_PowerMeas};
-ParStruct U_PowerCoeff = {.commandNumber = 203,
-                            .commandDescription = "U_Power ADC coeff",
+							.get = getU_HeaterMeas,
+							.set = setU_HeaterMeas};
+ParStruct U_HeaterCoeff = {.commandNumber = 203,
+                            .commandDescription = "U_Heater ADC coeff",
                             .type = FLOAT,
 							.isFlash = true,
-							.get = getU_PowerCoeff,
-							.set = setU_PowerCoeff,
+							.get = getU_HeaterCoeff,
+							.set = setU_HeaterCoeff,
                             .value.val_float = 0.0116,
                             .valueAbsMin.val_float = 0.001,
                             .valueAbsMax.val_float = 1.0};
+ParStruct U_24V_Min = {		.commandNumber = 204,
+                            .commandDescription = "24V Min Alarm @V",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getU_24V_Min,
+							.set = setU_24V_Min,
+                            .value.val_float = 22.0,
+                            .valueAbsMin.val_float = 12.0,
+                            .valueAbsMax.val_float = 23.9};
+ParStruct U_24V_Max = {		.commandNumber = 205,
+                            .commandDescription = "24V Max Alarm @V",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getU_24V_Max,
+							.set = setU_24V_Max,
+                            .value.val_float = 26.0,
+                            .valueAbsMin.val_float = 24.1,
+                            .valueAbsMax.val_float = 28.0};
 
 ParStruct I_1A = {.commandNumber = 210,
-                            .commandDescription = "I_1A measure",
+                            .commandDescription = "I_1A measure @A",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getI_1A,
 							.set = setI_1A};
 ParStruct I_1B = {.commandNumber = 211,
-                            .commandDescription = "I_1B measure",
+                            .commandDescription = "I_1B measure @A",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getI_1B,
 							.set = setI_1B};
 ParStruct I_2A = {.commandNumber = 212,
-                            .commandDescription = "I_2A measure",
+                            .commandDescription = "I_2A measure @A",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getI_2A,
 							.set = setI_2A};
 ParStruct I_2B = {.commandNumber = 213,
-                            .commandDescription = "I_2B measure",
+                            .commandDescription = "I_2B measure @A",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getI_2B,
@@ -151,32 +171,70 @@ ParStruct I_2B_Coeff = {.commandNumber = 217,
                             .valueAbsMin.val_float = 0.001,
                             .valueAbsMax.val_float = 1.0};
 
-ParStruct Temp1 = {.commandNumber = 220,
+ParStruct I_1A_Max = {	.commandNumber = 218,
+                            .commandDescription = "I_1A Max Alarm @A",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getI_1A_Max,
+							.set = setI_1A_Max,
+                            .value.val_float = 10.0,
+                            .valueAbsMin.val_float = 0.0,
+                            .valueAbsMax.val_float = 20.0};
+ParStruct I_1B_Max = {	.commandNumber = 219,
+                            .commandDescription = "I_1B Max Alarm @A",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getI_1B_Max,
+							.set = setI_1B_Max,
+                            .value.val_float = 10.0,
+                            .valueAbsMin.val_float = 0.0,
+                            .valueAbsMax.val_float = 20.0};
+ParStruct I_2A_Max = {	.commandNumber = 220,
+                            .commandDescription = "I_2A Max Alarm @A",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getI_2A_Max,
+							.set = setI_2A_Max,
+                            .value.val_float = 10.0,
+                            .valueAbsMin.val_float = 0.0,
+                            .valueAbsMax.val_float = 20.0};
+ParStruct I_2B_Max = {	.commandNumber = 221,
+                            .commandDescription = "I_2B Max Alarm @A",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getI_2B_Max,
+							.set = setI_2B_Max,
+                            .value.val_float = 10.0,
+                            .valueAbsMin.val_float = 0.0,
+                            .valueAbsMax.val_float = 20.0};
+
+
+ParStruct Temp1 = {.commandNumber = 230,
                             .commandDescription = "Temp1 measure",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getTemp1,
 							.set = setTemp1};
-ParStruct Temp2 = {.commandNumber = 221,
+ParStruct Temp2 = {.commandNumber = 231,
                             .commandDescription = "Temp2 measure",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getTemp2,
 							.set = setTemp2};
-ParStruct Temp3 = {			.commandNumber = 222,
+ParStruct Temp3 = {			.commandNumber = 232,
                             .commandDescription = "Temp3 measure",
                             .type = FLOAT,
                             .readOnly = true,
 							.get = getTemp3,
 							.set = setTemp3};
-ParStruct Temp4 = {			.commandNumber = 223,
+ParStruct Temp4 = {			.commandNumber = 233,
 							.commandDescription = "Temp4 measure",
 							.type = FLOAT,
 							.readOnly = true,
 							.get = getTemp4,
 							.set = setTemp4};
 
-ParStruct Temp1_coeff = {	.commandNumber = 224,
+ParStruct Temp1_coeff = {	.commandNumber = 234,
                             .commandDescription = "Temp1 ADC coeff",
                             .type = FLOAT,
 							.isFlash = true,
@@ -185,7 +243,7 @@ ParStruct Temp1_coeff = {	.commandNumber = 224,
                             .value.val_float = 1.0,
                             .valueAbsMin.val_float = 0.8,
                             .valueAbsMax.val_float = 1.2};
-ParStruct Temp2_coeff = {	.commandNumber = 225,
+ParStruct Temp2_coeff = {	.commandNumber = 235,
                             .commandDescription = "Temp2 ADC coeff",
                             .type = FLOAT,
 							.isFlash = true,
@@ -194,7 +252,7 @@ ParStruct Temp2_coeff = {	.commandNumber = 225,
                             .value.val_float = 1.0,
                             .valueAbsMin.val_float = 0.8,
                             .valueAbsMax.val_float = 1.2};
-ParStruct Temp3_coeff = {	.commandNumber = 226,
+ParStruct Temp3_coeff = {	.commandNumber = 236,
                             .commandDescription = "Temp3 ADC coeff",
                             .type = FLOAT,
 							.isFlash = true,
@@ -203,7 +261,7 @@ ParStruct Temp3_coeff = {	.commandNumber = 226,
                             .value.val_float = 1.0,
                             .valueAbsMin.val_float = 0.8,
                             .valueAbsMax.val_float = 1.2};
-ParStruct Temp4_coeff = {	.commandNumber = 227,
+ParStruct Temp4_coeff = {	.commandNumber = 237,
                             .commandDescription = "Temp4 ADC coeff",
                             .type = FLOAT,
 							.isFlash = true,
@@ -212,6 +270,79 @@ ParStruct Temp4_coeff = {	.commandNumber = 227,
                             .value.val_float = 1.0,
                             .valueAbsMin.val_float = 0.8,
                             .valueAbsMax.val_float = 1.2};
+
+ParStruct Temp1_Min = {	.commandNumber = 238,
+                            .commandDescription = "Temp1 Min Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp1_Min,
+							.set = setTemp1_Min,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp1_Max = {	.commandNumber = 239,
+                            .commandDescription = "Temp1 Max Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp1_Max,
+							.set = setTemp1_Max,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp2_Min = {	.commandNumber = 240,
+                            .commandDescription = "Temp2 Min Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp2_Min,
+							.set = setTemp2_Min,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp2_Max = {	.commandNumber = 241,
+                            .commandDescription = "Temp2 Max Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp2_Max,
+							.set = setTemp2_Max,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp3_Min = {	.commandNumber = 242,
+                            .commandDescription = "Temp3 Min Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp3_Min,
+							.set = setTemp3_Min,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp3_Max = {	.commandNumber = 243,
+                            .commandDescription = "Temp3 Max Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp3_Max,
+							.set = setTemp3_Max,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp4_Min = {	.commandNumber = 244,
+                            .commandDescription = "Temp4 Min Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp4_Min,
+							.set = setTemp4_Min,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct Temp4_Max = {	.commandNumber = 245,
+                            .commandDescription = "Temp4 Max Alarm @C",
+                            .type = FLOAT,
+							.isFlash = true,
+							.get = getTemp4_Max,
+							.set = setTemp4_Max,
+                            .value.val_float = -10.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
 
 ParStruct LoadSelect1 = {	.commandNumber = 301,
 							.commandDescription = "1ch select: 0-Res, 1-Peltier",
@@ -377,8 +508,25 @@ ParStruct Dcoeff2Freq = {	.commandNumber = 320,
 							.value.val_float = 0.0,
 							.valueAbsMin.val_float = 0.0,
 							.valueAbsMax.val_float = 100.0};
+ParStruct TempCh1Set = {	.commandNumber = 321,
+                            .commandDescription = "Temp Ch1 Set @C",
+                            .type = FLOAT,
+							.set = setTempCh1Set,
+							.get = getTempCh1Set,
+                            .value.val_float = 40.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+ParStruct TempCh2Set = {	.commandNumber = 322,
+                            .commandDescription = "Temp Ch2 Set @C",
+                            .type = FLOAT,
+							.set = setTempCh2Set,
+							.get = getTempCh2Set,
+                            .value.val_float = 40.0,
+                            .valueAbsMin.val_float = -55.0,
+                            .valueAbsMax.val_float = 150.0};
+
 ParStruct I1Set = {			.commandNumber = 330,
-                            .commandDescription = "I1 Set in %",
+                            .commandDescription = "I1 Set @%",
                             .type = FLOAT,
 							.isFlash = true,
 							.get = getI1Set,
@@ -387,7 +535,7 @@ ParStruct I1Set = {			.commandNumber = 330,
                             .valueAbsMin.val_float = 0.0,
                             .valueAbsMax.val_float = 100.0};
 ParStruct I2Set = {			.commandNumber = 331,
-                            .commandDescription = "I2 Set in %",
+                            .commandDescription = "I2 Set @%",
                             .type = FLOAT,
 							.isFlash = true,
 							.get = getI2Set,
@@ -455,7 +603,7 @@ ParStruct GateH2B = {		.commandNumber = 408,
                             .value.val_bool = 1};
 
 ParStruct PWM_CH1 = {		.commandNumber = 409,
-							.commandDescription = "Channel 1 PWM duty (signed)",
+							.commandDescription = "Channel 1 PWM duty @%(signed)",
 							.type = FLOAT,
 							.readOnly = true,
 							.set = setPWM_CH1,
@@ -465,7 +613,7 @@ ParStruct PWM_CH1 = {		.commandNumber = 409,
                             .valueAbsMax.val_float = 100.1};
 
 ParStruct PWM_CH2 = {		.commandNumber = 410,
-							.commandDescription = "Channel 2 PWM duty (signed)",
+							.commandDescription = "Channel 2 PWM duty @%(signed)",
 							.type = FLOAT,
 							.readOnly = true,
 							.set = setPWM_CH2,
@@ -491,7 +639,7 @@ ParStruct CH2_Polarity = {	.commandNumber = 412,
 							.value.val_bool = 1};
 
 ParStruct Freq = {			.commandNumber = 500,
-                            .commandDescription = "Pierce freq, Hz",
+                            .commandDescription = "Pierce freq @Hz",
                             .type = FLOAT,
                             .readOnly = true,
 							.set = setFreq,
@@ -499,6 +647,14 @@ ParStruct Freq = {			.commandNumber = 500,
                             .value.val_float = 1.0,
                             .valueAbsMin.val_float = 0.0,
                             .valueAbsMax.val_float = 1000000000.0};
+ParStruct FreqSet = {		.commandNumber = 501,
+                            .commandDescription = "Pierce freq Set @Hz",
+                            .type = FLOAT,
+							.set = setFreqSet,
+							.get = getFreqSet,
+                            .value.val_float = 1000000.0,
+                            .valueAbsMin.val_float = 10000.0,
+                            .valueAbsMax.val_float = 500000000.0};
 
 ParStruct Alarms = {		.commandNumber = 700,
 							.commandDescription = "Alarms vector",
@@ -516,14 +672,18 @@ void InitParams() {
 	uint8_t i = 0;
 	params[i++] = &ParamList;
 	params[i++] = &SaveFlash;
-	params[i++] = &U_PowerSet;
-	params[i++] = &U_PowerMin;
-	params[i++] = &U_PowerMax;
-	params[i++] = &U_PowerOnOff;
+
+	params[i++] = &U_HeaterSet;
+	params[i++] = &U_HeaterMin;
+	params[i++] = &U_HeaterMax;
+	params[i++] = &U_HeaterOnOff;
 	params[i++] = &U_24Vmeas;
 	params[i++] = &U_24Vcoeff;
-	params[i++] = &U_PowerMeas;
-	params[i++] = &U_PowerCoeff;
+	params[i++] = &U_HeaterMeas;
+	params[i++] = &U_HeaterCoeff;
+	params[i++] = &U_24V_Min;
+	params[i++] = &U_24V_Max;
+
 	params[i++] = &I_1A;
 	params[i++] = &I_1B;
 	params[i++] = &I_2A;
@@ -532,6 +692,10 @@ void InitParams() {
 	params[i++] = &I_1B_Coeff;
 	params[i++] = &I_2A_Coeff;
 	params[i++] = &I_2B_Coeff;
+	params[i++] = &I_1A_Max;
+	params[i++] = &I_1B_Max;
+	params[i++] = &I_2A_Max;
+	params[i++] = &I_2B_Max;
 
 	params[i++] = &Temp1;
 	params[i++] = &Temp2;
@@ -541,6 +705,14 @@ void InitParams() {
 	params[i++] = &Temp2_coeff;
 	params[i++] = &Temp3_coeff;
 	params[i++] = &Temp4_coeff;
+	params[i++] = &Temp1_Min;
+	params[i++] = &Temp1_Max;
+	params[i++] = &Temp2_Min;
+	params[i++] = &Temp2_Max;
+	params[i++] = &Temp3_Min;
+	params[i++] = &Temp3_Max;
+	params[i++] = &Temp4_Min;
+	params[i++] = &Temp4_Max;
 
 	params[i++] = &LoadSelect1;
 	params[i++] = &LoadSelect2;
@@ -565,6 +737,9 @@ void InitParams() {
 	params[i++] = &Dcoeff1Freq;
 	params[i++] = &Dcoeff2Freq;
 
+	params[i++] = &TempCh1Set;
+	params[i++] = &TempCh2Set;
+
 	params[i++] = &I1Set;
 	params[i++] = &I2Set;
 
@@ -585,6 +760,10 @@ void InitParams() {
 	params[i++] = &CH2_Polarity;
 
 	params[i++] = &Freq;
+	params[i++] = &FreqSet;
+
+	params[i++] = &Alarms;
+	params[i++] = &AlarmMasks;
 
 
 	for(uint8_t j = 0; j < PARAMS_COUNT; j++) {
@@ -592,56 +771,56 @@ void InitParams() {
 	}
 }
 
-bool setU_PowerSet(valueTypes value) {
-    if(value.val_float >= U_PowerSet.valueAbsMax.val_float ||
-       value.val_float <= U_PowerSet.valueAbsMin.val_float) {
+bool setU_HeaterSet(valueTypes value) {
+    if(value.val_float >= U_HeaterSet.valueAbsMax.val_float ||
+       value.val_float <= U_HeaterSet.valueAbsMin.val_float) {
        return false;
     } else {
     	//Set_U_Heater PWM (10 kHz, 16800)
     	extern TIM_HandleTypeDef htim8;
     	int16_t counterSet = 16800*(1.20 - 0.05 * value.val_float);
     	__HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_3, counterSet > 0 ? counterSet : 0);
-        U_PowerSet.value = value;
+        U_HeaterSet.value = value;
         return true;
     }
 }
-valueTypes getU_PowerSet(void) {
-    return U_PowerSet.value;
+valueTypes getU_HeaterSet(void) {
+    return U_HeaterSet.value;
 }
 
-bool setU_PowerOnOff(valueTypes state) {
+bool setU_HeaterOnOff(valueTypes state) {
 	HAL_GPIO_WritePin(Disable_DC_DC_GPIO_Port, Disable_DC_DC_Pin, state.val_bool);
-    U_PowerOnOff.value = state;
+    U_HeaterOnOff.value = state;
     return true;
 }
-valueTypes getU_PowerOnOff(void) {
-    return U_PowerOnOff.value;
+valueTypes getU_HeaterOnOff(void) {
+    return U_HeaterOnOff.value;
 }
 
-bool setU_PowerMin(valueTypes value) {
-	if(value.val_float >= U_PowerMin.valueAbsMax.val_float ||
-	   value.val_float <= U_PowerMin.valueAbsMin.val_float) {
+bool setU_HeaterMin(valueTypes value) {
+	if(value.val_float >= U_HeaterMin.valueAbsMax.val_float ||
+	   value.val_float <= U_HeaterMin.valueAbsMin.val_float) {
 	   return false;
 	} else {
-		U_PowerMin.value = value;
+		U_HeaterMin.value = value;
 		return true;
 	}
 }
-valueTypes getU_PowerMin(void) {
-    return U_PowerMin.value;
+valueTypes getU_HeaterMin(void) {
+    return U_HeaterMin.value;
 }
 
-bool setU_PowerMax(valueTypes value) {
-	if(value.val_float >= U_PowerMax.valueAbsMax.val_float ||
-	   value.val_float <= U_PowerMax.valueAbsMin.val_float) {
+bool setU_HeaterMax(valueTypes value) {
+	if(value.val_float >= U_HeaterMax.valueAbsMax.val_float ||
+	   value.val_float <= U_HeaterMax.valueAbsMin.val_float) {
 	   return false;
 	} else {
-		U_PowerMax.value = value;
+		U_HeaterMax.value = value;
 		return true;
 	}
 }
-valueTypes getU_PowerMax(void) {
-    return U_PowerMax.value;
+valueTypes getU_HeaterMax(void) {
+    return U_HeaterMax.value;
 }
 
 
@@ -668,26 +847,52 @@ valueTypes getU_24Vcoeff(void) {
 }
 
 
-bool setU_PowerMeas(valueTypes value) {
-    U_PowerMeas.value = value;
+bool setU_HeaterMeas(valueTypes value) {
+    U_HeaterMeas.value = value;
     return true;
 }
-valueTypes getU_PowerMeas() {
-    return U_PowerMeas.value;
+valueTypes getU_HeaterMeas() {
+    return U_HeaterMeas.value;
 }
 
-bool setU_PowerCoeff(valueTypes value) {
-    if(value.val_float >= U_PowerCoeff.valueAbsMax.val_float ||
-       value.val_float <= U_PowerCoeff.valueAbsMin.val_float) {
+bool setU_HeaterCoeff(valueTypes value) {
+    if(value.val_float >= U_HeaterCoeff.valueAbsMax.val_float ||
+       value.val_float <= U_HeaterCoeff.valueAbsMin.val_float) {
        return false;
     } else {
-       U_PowerCoeff.value = value;
+       U_HeaterCoeff.value = value;
        return true;
     }
 }
 
-valueTypes getU_PowerCoeff(void) {
-    return U_PowerCoeff.value;
+valueTypes getU_HeaterCoeff(void) {
+    return U_HeaterCoeff.value;
+}
+
+bool setU_24V_Min(valueTypes value) {
+	if(value.val_float >= U_24V_Min.valueAbsMax.val_float ||
+	   value.val_float <= U_24V_Min.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		U_24V_Min.value = value;
+		return true;
+	}
+}
+valueTypes getU_24V_Min(void) {
+    return U_24V_Min.value;
+}
+
+bool setU_24V_Max(valueTypes value) {
+	if(value.val_float >= U_24V_Max.valueAbsMax.val_float ||
+	   value.val_float <= U_24V_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		U_24V_Max.value = value;
+		return true;
+	}
+}
+valueTypes getU_24V_Max(void) {
+    return U_24V_Max.value;
 }
 
 bool setI_1A(valueTypes value) {
@@ -766,6 +971,55 @@ bool setI_2B_Coeff(valueTypes value) {
 }
 valueTypes getI_2B_Coeff(void) {
     return I_2B_Coeff.value;
+}
+
+bool setI_1A_Max(valueTypes value) {
+	if(value.val_float >= I_1A_Max.valueAbsMax.val_float ||
+	   value.val_float <= I_1A_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		I_1A_Max.value = value;
+		return true;
+	}
+}
+valueTypes getI_1A_Max(void) {
+    return I_1A_Max.value;
+}
+bool setI_1B_Max(valueTypes value) {
+	if(value.val_float >= I_1B_Max.valueAbsMax.val_float ||
+	   value.val_float <= I_1B_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		I_1B_Max.value = value;
+		return true;
+	}
+}
+valueTypes getI_1B_Max(void) {
+    return I_1B_Max.value;
+}
+bool setI_2A_Max(valueTypes value) {
+	if(value.val_float >= I_2A_Max.valueAbsMax.val_float ||
+	   value.val_float <= I_2A_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		I_2A_Max.value = value;
+		return true;
+	}
+}
+valueTypes getI_2A_Max(void) {
+    return I_2A_Max.value;
+}
+bool setI_2B_Max(valueTypes value) {
+	if(value.val_float >= I_2B_Max.valueAbsMax.val_float ||
+	   value.val_float <= I_2B_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		I_2B_Max.value = value;
+		return true;
+	}
+}
+valueTypes getI_2B_Max(void) {
+    return I_2B_Max.value;
 }
 
 
@@ -847,7 +1101,109 @@ valueTypes getTemp4_coeff(void) {
     return Temp4_coeff.value;
 }
 
+bool setTemp1_Min(valueTypes value) {
+	if(value.val_float >= Temp1_Min.valueAbsMax.val_float ||
+	   value.val_float <= Temp1_Min.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp1_Min.value = value;
+		return true;
+	}
+}
+valueTypes getTemp1_Min(void) {
+    return Temp1_Min.value;
+}
+
+bool setTemp1_Max(valueTypes value) {
+	if(value.val_float >= Temp1_Max.valueAbsMax.val_float ||
+	   value.val_float <= Temp1_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp1_Max.value = value;
+		return true;
+	}
+}
+valueTypes getTemp1_Max(void) {
+    return Temp1_Max.value;
+}
+bool setTemp2_Min(valueTypes value) {
+	if(value.val_float >= Temp2_Min.valueAbsMax.val_float ||
+	   value.val_float <= Temp2_Min.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp2_Min.value = value;
+		return true;
+	}
+}
+valueTypes getTemp2_Min(void) {
+    return Temp2_Min.value;
+}
+
+bool setTemp2_Max(valueTypes value) {
+	if(value.val_float >= Temp2_Max.valueAbsMax.val_float ||
+	   value.val_float <= Temp2_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp2_Max.value = value;
+		return true;
+	}
+}
+valueTypes getTemp2_Max(void) {
+    return Temp2_Max.value;
+}
+bool setTemp3_Min(valueTypes value) {
+	if(value.val_float >= Temp3_Min.valueAbsMax.val_float ||
+	   value.val_float <= Temp3_Min.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp3_Min.value = value;
+		return true;
+	}
+}
+valueTypes getTemp3_Min(void) {
+    return Temp3_Min.value;
+}
+
+bool setTemp3_Max(valueTypes value) {
+	if(value.val_float >= Temp3_Max.valueAbsMax.val_float ||
+	   value.val_float <= Temp3_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp3_Max.value = value;
+		return true;
+	}
+}
+valueTypes getTemp3_Max(void) {
+    return Temp3_Max.value;
+}
+bool setTemp4_Min(valueTypes value) {
+	if(value.val_float >= Temp4_Min.valueAbsMax.val_float ||
+	   value.val_float <= Temp4_Min.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp4_Min.value = value;
+		return true;
+	}
+}
+valueTypes getTemp4_Min(void) {
+    return Temp4_Min.value;
+}
+
+bool setTemp4_Max(valueTypes value) {
+	if(value.val_float >= Temp4_Max.valueAbsMax.val_float ||
+	   value.val_float <= Temp4_Max.valueAbsMin.val_float) {
+	   return false;
+	} else {
+		Temp4_Max.value = value;
+		return true;
+	}
+}
+valueTypes getTemp4_Max(void) {
+    return Temp4_Max.value;
+}
+
 bool setLoadSelect1(valueTypes state) {
+	Ch1_OnOff.value.val_bool = false; //Отключение канала
     LoadSelect1.value = state;
     return true;
 }
@@ -855,6 +1211,7 @@ valueTypes getLoadSelect1(void) {
     return LoadSelect1.value;
 }
 bool setLoadSelect2(valueTypes state) {
+	Ch2_OnOff.value.val_bool = false; //Отключение канала
     LoadSelect2.value = state;
     return true;
 }
@@ -863,6 +1220,7 @@ valueTypes getLoadSelect2(void) {
 }
 
 bool setModeSelect1(valueTypes state) {
+	Ch1_OnOff.value.val_bool = false; //Отключение канала
     ModeSelect1.value = state;
     return true;
 }
@@ -870,6 +1228,7 @@ valueTypes getModeSelect1(void) {
     return ModeSelect1.value;
 }
 bool setModeSelect2(valueTypes state) {
+	Ch2_OnOff.value.val_bool = false; //Отключение канала
     ModeSelect2.value = state;
     return true;
 }
@@ -878,13 +1237,15 @@ valueTypes getModeSelect2(void) {
 }
 
 bool setCh1_OnOff(valueTypes state) {
-   Ch1_OnOff.value = state;
+	resetPID(0);
+	Ch1_OnOff.value = state;
     return true;
 }
 valueTypes getCh1_OnOff(void) {
     return Ch1_OnOff.value;
 }
 bool setCh2_OnOff(valueTypes state) {
+	resetPID(1);
     Ch2_OnOff.value = state;
     return true;
 }
@@ -893,14 +1254,16 @@ valueTypes getCh2_OnOff(void) {
 }
 
 bool setSourceSelect1(valueTypes state) {
-   SourceSelect1.value = state;
-    return true;
+	Ch1_OnOff.value.val_bool = false; //Отключение канала
+	SourceSelect1.value = state;
+	return true;
 }
 valueTypes getSourceSelect1(void) {
     return SourceSelect1.value;
 }
 bool setSourceSelect2(valueTypes state) {
-    SourceSelect2.value = state;
+	Ch2_OnOff.value.val_bool = false; //Отключение канала
+	SourceSelect2.value = state;
     return true;
 }
 valueTypes getSourceSelect2(void) {
@@ -1056,6 +1419,30 @@ valueTypes getDcoeff2Freq(void) {
     return Dcoeff2Freq.value;
 }
 
+bool setTempCh1Set(valueTypes value) {
+    if(value.val_float >= TempCh1Set.valueAbsMax.val_float ||
+       value.val_float <= TempCh1Set.valueAbsMin.val_float) {
+       return false;
+    } else {
+    	TempCh1Set.value = value;
+        return true;
+    }
+}
+valueTypes getTempCh1Set(void) {
+    return TempCh1Set.value;
+}
+bool setTempCh2Set(valueTypes value) {
+    if(value.val_float >= TempCh2Set.valueAbsMax.val_float ||
+       value.val_float <= TempCh2Set.valueAbsMin.val_float) {
+       return false;
+    } else {
+    	TempCh2Set.value = value;
+        return true;
+    }
+}
+valueTypes getTempCh2Set(void) {
+    return TempCh2Set.value;
+}
 
 bool setI1Set(valueTypes value) {
     if(value.val_float >= I1Set.valueAbsMax.val_float ||
@@ -1084,12 +1471,14 @@ valueTypes getI2Set(void) {
 
 bool setGate1A_OnOff(valueTypes value) {
 	Gate1A_OnOff.value = value;
+	HAL_GPIO_WritePin(Gates1_A_Dis_GPIO_Port, Gates1_A_Dis_Pin, !value.val_bool);
     return true;
 }
 valueTypes getGate1A_OnOff(void) {
     return Gate1A_OnOff.value;
 }
 bool setGate1B_OnOff(valueTypes value) {
+	HAL_GPIO_WritePin(Gates1_B_Dis_GPIO_Port, Gates1_B_Dis_Pin, !value.val_bool);
     Gate1B_OnOff.value = value;
     return true;
 }
@@ -1097,6 +1486,7 @@ valueTypes getGate1B_OnOff(void) {
     return Gate1B_OnOff.value;
 }
 bool setGate2A_OnOff(valueTypes value) {
+	HAL_GPIO_WritePin(Gates2_A_Dis_GPIO_Port, Gates2_A_Dis_Pin, !value.val_bool);
 	Gate2A_OnOff.value = value;
     return true;
 }
@@ -1104,6 +1494,7 @@ valueTypes getGate2A_OnOff(void) {
     return Gate2A_OnOff.value;
 }
 bool setGate2B_OnOff(valueTypes value) {
+	HAL_GPIO_WritePin(Gates2_B_Dis_GPIO_Port, Gates2_B_Dis_Pin, !value.val_bool);
     Gate2B_OnOff.value = value;
     return true;
 }
@@ -1162,7 +1553,7 @@ bool setPWM_CH2(valueTypes value) {
        value.val_float <= PWM_CH2.valueAbsMin.val_float) {
        return false;
     } else {
-    	PWM_CH1.value = value;
+    	PWM_CH2.value = value;
         return true;
     }
 }
@@ -1196,6 +1587,19 @@ valueTypes getFreq() {
     return Freq.value;
 }
 
+bool setFreqSet(valueTypes value) {
+    if(value.val_float >= FreqSet.valueAbsMax.val_float ||
+       value.val_float <= FreqSet.valueAbsMin.val_float) {
+       return false;
+    } else {
+    	FreqSet.value = value;
+        return true;
+    }
+}
+valueTypes getFreqSet(void) {
+    return FreqSet.value;
+}
+
 
 void commandParamList() {
 	for(int i = 0; i < PARAMS_COUNT; i++) {
@@ -1203,7 +1607,12 @@ void commandParamList() {
 			continue;
 		} else {
 			char buffer[128];
-			sprintf((char*)buffer, "%u:%s:%s", params[i]->commandNumber, typeNames[params[i]->type], params[i]->commandDescription);
+			sprintf((char*)buffer, "%u:[%s:%s:%s]:%s",
+					params[i]->commandNumber,
+					params[i]->isCommand ? "COMMAND" : typeNames[params[i]->type],
+					params[i]->readOnly ? "R/O" : "",
+					params[i]->isFlash ? "F" : "",
+					params[i]->commandDescription);
 			UARTtransmit((char*)buffer);
 		}
 	}
