@@ -7,13 +7,13 @@
 
 #include "UARTCommunication.h"
 
-uint8_t RXbuffer[128];
-uint8_t TXbuffer[128];
+uint8_t RXbuffer[512];
+uint8_t TXbuffer[512];
 char delim = ';';
 char EOL = '\n';
 uint16_t TXtimeout = 1000;
 uint8_t RXbufferChar[1];
-uint8_t RXbufferElem = 0;
+uint16_t RXbufferElem = 0;
 
 char** str_split(char* a_str, const char a_delim)
 {
@@ -124,7 +124,7 @@ bool UARTset(uint16_t com, char* str) {
 	valueTypes value;
 	switch(params[paramTable[com] - 1]->type) {
 	case UINT8_T:
-		sscanf(str, "%c", &value.val_uint8_t);
+		sscanf(str, "%hhu", &value.val_uint8_t);
 		break;
 	case UINT16_T:
 		sscanf(str, "%hu", &value.val_uint16_t);

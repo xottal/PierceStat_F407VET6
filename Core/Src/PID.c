@@ -67,7 +67,7 @@ float proceedPID(uint8_t channel) {
 		if(!isFreq) { //Temp source ch1
 			float P = getPcoeff1Temp().val_float;
 			float PID = 0.0;
-			if(tLast == 0) {
+			if(tLast[0] == 0) {
 				tStart[0] = __HAL_TIM_GET_COUNTER(&htim5);
 				tLast[0] = tStart[0];
 				errorLast[0] = tempRead - getTempCh1Set().val_float;
@@ -82,9 +82,11 @@ float proceedPID(uint8_t channel) {
 				if(normCoeff[0] == 0) {
 					normCoeff[0] = time - tLast[0];
 				}
-				Integral[0] += error*(time - tLast[0])/normCoeff[0];
-				if(Integral[0] > IntegralMax[0])
-					Integral[0] = IntegralMax[0];
+				Integral[0] += error*(float)(time - tLast[0])/normCoeff[0];
+				if(I*Integral[0] > 100.0)
+					Integral[0] = 100.0/I;
+				if(!getLoadSelect1().val_bool && Integral[0] > 0)
+					Integral[0] = 0;
 				float Der = (error - errorLast[0])/(time - tLast[0])*normCoeff[0];
 				PID = P*error + I*Integral[0] + D*Der;
 				tLast[0] = time;
@@ -96,7 +98,7 @@ float proceedPID(uint8_t channel) {
 		else { //Freq source ch1
 			float P = getPcoeff1Freq().val_float;
 			float PID = 0.0;
-			if(tLast == 0) {
+			if(tLast[0] == 0) {
 				tStart[0] = __HAL_TIM_GET_COUNTER(&htim5);
 				tLast[0] = tStart[0];
 				errorLast[0] = freqRead - getFreqSet().val_float;
@@ -111,9 +113,11 @@ float proceedPID(uint8_t channel) {
 				if(normCoeff[0] == 0) {
 					normCoeff[0] = time - tLast[0];
 				}
-				Integral[0] += error*(time - tLast[0])/normCoeff[0];
-				if(Integral[0] > IntegralMax[0])
-					Integral[0] = IntegralMax[0];
+				Integral[0] += error*(float)(time - tLast[0])/normCoeff[0];
+				if(I*Integral[0] > 100.0)
+					Integral[0] = 100.0/I;
+				if(!getLoadSelect1().val_bool && Integral[0] > 0)
+					Integral[0] = 0;
 				float Der = (error - errorLast[0])/(time - tLast[0])*normCoeff[0];
 				PID = P*error + I*Integral[0] + D*Der;
 				tLast[0] = time;
@@ -148,10 +152,10 @@ float proceedPID(uint8_t channel) {
 			break;
 		}
 
-		if(!isFreq) { //Temp source ch1
+		if(!isFreq) { //Temp source ch2
 			float P = getPcoeff2Temp().val_float;
 			float PID = 0.0;
-			if(tLast == 0) {
+			if(tLast[1] == 0) {
 				tStart[1] = __HAL_TIM_GET_COUNTER(&htim5);
 				tLast[1] = tStart[1];
 				errorLast[1] = tempRead - getTempCh2Set().val_float;
@@ -166,9 +170,11 @@ float proceedPID(uint8_t channel) {
 				if(normCoeff[1] == 0) {
 					normCoeff[1] = time - tLast[1];
 				}
-				Integral[1] += error*(time - tLast[1])/normCoeff[1];
-				if(Integral[1] > IntegralMax[1])
-					Integral[1] = IntegralMax[1];
+				Integral[1] += error*(float)(time - tLast[1])/normCoeff[1];
+				if(I*Integral[1] > 100.0)
+					Integral[1] = 100.0/I;
+				if(!getLoadSelect2().val_bool && Integral[1] > 0)
+					Integral[1] = 0;
 				float Der = (error - errorLast[1])/(time - tLast[1])*normCoeff[1];
 				PID = P*error + I*Integral[1] + D*Der;
 				tLast[1] = time;
@@ -177,10 +183,10 @@ float proceedPID(uint8_t channel) {
 			PID = limitPID(PID);
 			return PID;
 		}
-		else { //Freq source ch1
+		else { //Freq source ch2
 			float P = getPcoeff2Freq().val_float;
 			float PID = 0.0;
-			if(tLast == 0) {
+			if(tLast[1] == 0) {
 				tStart[1] = __HAL_TIM_GET_COUNTER(&htim5);
 				tLast[1] = tStart[1];
 				errorLast[1] = freqRead - getFreqSet().val_float;
@@ -196,8 +202,10 @@ float proceedPID(uint8_t channel) {
 					normCoeff[1] = time - tLast[1];
 				}
 				Integral[1] += error*(time - tLast[1])/normCoeff[1];
-				if(Integral[1] > IntegralMax[1])
-					Integral[1] = IntegralMax[1];
+				if(I*Integral[1] > 100.0)
+					Integral[1] = 100.0/I;
+				if(!getLoadSelect2().val_bool && Integral[1] > 0)
+					Integral[1] = 0;
 				float Der = (error - errorLast[1])/(time - tLast[1])*normCoeff[1];
 				PID = P*error + I*Integral[0] + D*Der;
 				tLast[1] = time;
@@ -234,34 +242,42 @@ void setPWM() {
 		setGateH1B(FALSE);
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
 		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+		HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+		HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
 	}
 	else {
 		setGate1A_OnOff(TRUE);
 		setGate1B_OnOff(TRUE);
-		if(getModeSelect1().val_bool)
+		if(getModeSelect1().val_bool) {
 			setPWM_CH1(getI1Set());
+		}
 		else
-			setPWM_CH1((valueTypes)proceedPID(0));
+			setPWM_CH1((valueTypes)(-proceedPID(0)));
 
 
 		float dutyCH1 = getPWM_CH1().val_float/100.0;
-		if(!getCH1_Polarity().val_bool) {
-			dutyCH1 = dutyCH1*(-1.0);
-		}
 		if(!getLoadSelect1().val_bool && dutyCH1 < 0.0f) {
 			dutyCH1 = 0.0f;
 		}
+		if(!getCH1_Polarity().val_bool) {
+			dutyCH1 = dutyCH1*(-1.0);
+		}
+
 
 		if(dutyCH1 > 0) {
 			setGateH1A(FALSE);
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_2);
+			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, freq_PWM_MO/freq_PWM_CH1 * dutyCH1 - 1);
 			setGateH1B(TRUE);
 		}
 		else {
 			setGateH1B(FALSE);
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, freq_PWM_MO/freq_PWM_CH1 * (-dutyCH1) + 1);
+			HAL_TIM_PWM_Stop(&htim3, TIM_CHANNEL_1);
+			HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, freq_PWM_MO/freq_PWM_CH1 * (-dutyCH1) - 1);
 			setGateH1A(TRUE);
 		}
 	}
@@ -273,32 +289,40 @@ void setPWM() {
 		setGateH2B(FALSE);
 		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
 		__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 0);
+		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
+		HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
 	}
 	else {
 		setGate2A_OnOff(TRUE);
 		setGate2B_OnOff(TRUE);
-		if(getModeSelect2().val_bool)
+		if(getModeSelect2().val_bool) {
 			setPWM_CH2(getI2Set());
+		}
 		else
-			setPWM_CH2((valueTypes)proceedPID(1));
+			setPWM_CH2((valueTypes)(-proceedPID(1)));
 
 		float dutyCH2 = getPWM_CH2().val_float/100.0f;
-		if(!getCH2_Polarity().val_bool) {
-			dutyCH2 = dutyCH2*(-1.0f);
-		}
 		if(!getLoadSelect1().val_bool && dutyCH2 < 0.0f) {
 			dutyCH2 = 0.0f;
 		}
+		if(!getCH2_Polarity().val_bool) {
+			dutyCH2 = dutyCH2*(-1.0f);
+		}
+
 
 		if(dutyCH2 > 0) {
 			setGateH2A(FALSE);
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, 0);
+			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_2);
+			HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, freq_PWM_MO/freq_PWM_CH2 * dutyCH2 - 1);
 			setGateH2B(TRUE);
 		}
 		else {
 			setGateH2B(FALSE);
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_1, 0);
+			HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
+			HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
 			__HAL_TIM_SET_COMPARE(&htim4, TIM_CHANNEL_2, freq_PWM_MO/freq_PWM_CH2 * (-dutyCH2) + 1);
 			setGateH2A(TRUE);
 		}

@@ -69,17 +69,18 @@ UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
 //Freq counter variables
-float TimerFreq = 84e6; //Freq of TIM2
+uint32_t TimerFreq = 84000000; //Freq of TIM2
 uint16_t counterPeriod = 0; //Update period of TIM1 (init in main)
 uint32_t counterValue = 0; //TIM2 clock counter value (update in TIM1 interrupt)
+uint8_t periodElapsed = 0; //update in TIM1 interrupt
 
 //UART variables
 char IDNstring[] = "PierceStat: AssPirates 2023 (CockPit)";
 
 //Buffer for Voltage and Current Measurements
-uint16_t dmaADC1buffer[6];
+uint16_t dmaADC1buffer[600];
 //Buffer for Temp Measurements
-uint16_t dmaADC2buffer[4];
+uint16_t dmaADC2buffer[400];
 
 //MOSFET Gate PWM
 uint32_t freq_PWM_MO = 84000000; //Hz
@@ -125,7 +126,7 @@ static void MX_IWDG_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	InitParams();
+  InitParams();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -163,15 +164,16 @@ int main(void)
   //Init flash reading
   InitVirtAddTab();
   ReadFlash(); //time consuming
+  setU_HeaterOnOff(getU_HeaterOnOff());
 
   //Global 100us clock start (RTC - 120 hours limit)
   HAL_TIM_Base_Start(&htim5);
 
   //Gate PWMs init
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
+  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
+  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   //Set_U_Heater PWM (10 kHz, 16800)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   //Timer @84MHz for clock reference
@@ -182,8 +184,8 @@ int main(void)
   HAL_TIM_Base_Start_IT(&htim1);
 
   //ADC DMA start (10 channels)
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)dmaADC1buffer, 6);
-  HAL_ADC_Start_DMA(&hadc2, (uint32_t*)dmaADC2buffer, 4);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)dmaADC1buffer, 600);
+  HAL_ADC_Start_DMA(&hadc2, (uint32_t*)dmaADC2buffer, 400);
 
   //100ms interrupt for ADC and other staff
   __HAL_TIM_CLEAR_IT(&htim6,TIM_IT_UPDATE);
@@ -244,7 +246,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
+  RCC_OscInitStruct.PLL.PLLM = 6;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
@@ -309,7 +311,7 @@ static void MX_ADC1_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_0;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -406,7 +408,7 @@ static void MX_ADC2_Init(void)
   */
   sConfig.Channel = ADC_CHANNEL_10;
   sConfig.Rank = 1;
-  sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+  sConfig.SamplingTime = ADC_SAMPLETIME_144CYCLES;
   if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -640,14 +642,13 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 630-1;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 120-1;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
@@ -704,14 +705,13 @@ static void MX_TIM4_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 420-1;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
-  sConfigOC.Pulse = 210-1;
   if (HAL_TIM_PWM_ConfigChannel(&htim4, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
   {
     Error_Handler();
@@ -897,7 +897,7 @@ static void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 1024000;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -990,23 +990,42 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 	if(htim == &htim1) {
 		uint32_t temp = __HAL_TIM_GET_COUNTER(&htim2);
-		float freq = ((float)counterPeriod + 1) / (temp - counterValue) * TimerFreq;
-		setFreq((valueTypes)freq);
-		counterValue = temp;
+		uint32_t delta = temp - counterValue;
+		if(delta < 0.05 * TimerFreq) {
+			periodElapsed++;
+		}
+		else {
+			float freq = ((float)counterPeriod + 1) / (temp - counterValue) * (float)TimerFreq * (periodElapsed + 1);
+			setFreq((valueTypes)freq);
+			counterValue = temp;
+			periodElapsed = 0;
+		}
+
 
 	}
 	else if(htim == &htim6) {
-		setU_24Vmeas((valueTypes)(dmaADC1buffer[0] * getU_24Vcoeff().val_float));
-		setU_HeaterMeas((valueTypes)(dmaADC1buffer[1] * getU_HeaterCoeff().val_float));
-		setI_1A((valueTypes)(dmaADC1buffer[2] * getI_1A_Coeff().val_float));
-		setI_1B((valueTypes)(dmaADC1buffer[3] * getI_1B_Coeff().val_float));
-		setI_2A((valueTypes)(dmaADC1buffer[4] * getI_2A_Coeff().val_float));
-		setI_2B((valueTypes)(dmaADC1buffer[5] * getI_2B_Coeff().val_float));
 
-		setTemp1((valueTypes)(getTemp3455(dmaADC2buffer[0] * getTemp1_coeff().val_float)));
-		setTemp2((valueTypes)(getTemp3455(dmaADC2buffer[1] * getTemp2_coeff().val_float)));
-		setTemp3((valueTypes)(getTempPt1000(dmaADC2buffer[2] * getTemp3_coeff().val_float)));
-		setTemp4((valueTypes)(getTempPt1000(dmaADC2buffer[3] * getTemp4_coeff().val_float)));
+		float ADC1res[6] = {0};
+		float ADC2res[4] = {0};
+		for(int i = 0; i < 100; i++) {
+			for(int j = 0; j < 6; j++) {
+				ADC1res[j] += dmaADC1buffer[i*6+j];
+			}
+			for(int j = 0; j < 4; j++) {
+				ADC2res[j] += dmaADC2buffer[i*4+j];
+			}
+		}
+		setU_24Vmeas((valueTypes)(ADC1res[0]/100.0f * getU_24Vcoeff().val_float));
+		setU_HeaterMeas((valueTypes)(ADC1res[1]/100.0f * getU_HeaterCoeff().val_float));
+		setI_1A((valueTypes)(ADC1res[2]/100.0f * getI_1A_Coeff().val_float));
+		setI_1B((valueTypes)(ADC1res[3]/100.0f * getI_1B_Coeff().val_float));
+		setI_2A((valueTypes)(ADC1res[4]/100.0f * getI_2A_Coeff().val_float));
+		setI_2B((valueTypes)(ADC1res[5]/100.0f * getI_2B_Coeff().val_float));
+
+		setTemp1((valueTypes)(getTemp3455(ADC2res[0]/100.0f * getTemp1_coeff().val_float)));
+		setTemp2((valueTypes)(getTemp3455(ADC2res[1]/100.0f * getTemp2_coeff().val_float)));
+		setTemp3((valueTypes)(getTempPt1000(ADC2res[2]/100.0f * getTemp3_coeff().val_float)));
+		setTemp4((valueTypes)(getTempPt1000(ADC2res[3]/100.0f * getTemp4_coeff().val_float)));
 
 		setPWM();
 	}

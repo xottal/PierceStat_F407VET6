@@ -33,7 +33,7 @@ uint16_t rawValuesPt1000[51] = {
 		3990
 };
 
-float getTemp3455(uint16_t rawData) {
+float getTemp3455(float rawData) {
 	if(rawData < rawValues3455[41] ||
 		rawData > rawValues3455[0]) {
 		return 999.9;
@@ -50,7 +50,7 @@ float getTemp3455(uint16_t rawData) {
 	}
 }
 
-float getTempPt1000(uint16_t rawData) {
+float getTempPt1000(float rawData) {
 	if(rawData > rawValuesPt1000[50]) {
 		return 999.9;
 	}
