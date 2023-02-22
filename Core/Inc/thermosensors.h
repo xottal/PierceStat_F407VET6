@@ -12,8 +12,8 @@
 
 
 
-float getTemp3455(uint16_t rawData);
+float getTemp3455(float rawData);
 
-float getTempPt1000(uint16_t rawData);
+float getTempPt1000(float rawData);
 
 #endif /* INC_THERMOSENSORS_H_ */
