@@ -1,3 +1,0 @@
-../Core/Src/flashManag.c:15:6:InitVirtAddTab	16	static
-../Core/Src/flashManag.c:28:6:ReadFlash	16	static
-../Core/Src/flashManag.c:49:6:SaveToFlash	16	static

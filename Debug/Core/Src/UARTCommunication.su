@@ -1,7 +1,0 @@
-../Core/Src/UARTCommunication.c:18:8:str_split	56	static
-../Core/Src/UARTCommunication.c:66:6:UARTtransmit	24	static
-../Core/Src/UARTCommunication.c:71:6:UARTget	40	static
-../Core/Src/UARTCommunication.c:116:6:UARTset	24	static
-../Core/Src/UARTCommunication.c:157:6:UARTtransmitNum	16	static
-../Core/Src/UARTCommunication.c:162:6:commandSearch	40	static
-../Core/Src/UARTCommunication.c:211:6:HAL_UART_RxCpltCallback	16	static
