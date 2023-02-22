@@ -1,6 +1,7 @@
 "./Core/Src/PID.o"
 "./Core/Src/Parameters.o"
 "./Core/Src/UARTCommunication.o"
+"./Core/Src/alarms.o"
 "./Core/Src/eeprom.o"
 "./Core/Src/flashManag.o"
 "./Core/Src/main.o"

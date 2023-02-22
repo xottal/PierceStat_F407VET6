@@ -657,13 +657,13 @@ ParStruct FreqSet = {		.commandNumber = 501,
                             .valueAbsMax.val_float = 500000000.0};
 
 ParStruct Alarms = {		.commandNumber = 700,
-							.commandDescription = "Alarms vector",
+							.commandDescription = "Alarms vector (1 - alarm)",
 							.type = UINT32_T,
 							.readOnly = true,
 							.value.val_uint32_t = 0};
 
 ParStruct AlarmMasks = {	.commandNumber = 800,
-							.commandDescription = "Alarm masks vector",
+							.commandDescription = "Alarm masks vector (0 - masked)",
 							.type = UINT32_T,
 							.value.val_uint32_t = 0};
 
@@ -1600,6 +1600,21 @@ valueTypes getFreqSet(void) {
     return FreqSet.value;
 }
 
+bool setAlarms(valueTypes value) {
+   Alarms.value = value;
+   return true;
+}
+valueTypes getAlarms() {
+    return Alarms.value;
+}
+
+bool setAlarmMasks(valueTypes value) {
+   AlarmMasks.value = value;
+   return true;
+}
+valueTypes getAlarmMasks() {
+    return AlarmMasks.value;
+}
 
 void commandParamList() {
 	for(int i = 0; i < PARAMS_COUNT; i++) {

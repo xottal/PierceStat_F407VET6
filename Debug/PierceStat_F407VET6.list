@@ -29,23 +29,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  12 .ARM.attributes 00000030  00000000  00000000  000315c0  2**0
                   CONTENTS, READONLY
- 13 .debug_info   000159dc  00000000  00000000  000315f0  2**0
+ 13 .debug_info   00015a62  00000000  00000000  000315f0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_abbrev 000032b8  00000000  00000000  00046fcc  2**0
+ 14 .debug_abbrev 000032b8  00000000  00000000  00047052  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_aranges 000015b8  00000000  00000000  0004a288  2**3
+ 15 .debug_aranges 000015d8  00000000  00000000  0004a310  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_ranges 00001478  00000000  00000000  0004b840  2**3
+ 16 .debug_ranges 00001498  00000000  00000000  0004b8e8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_macro  00024e8e  00000000  00000000  0004ccb8  2**0
+ 17 .debug_macro  00024e8e  00000000  00000000  0004cd80  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line   00017554  00000000  00000000  00071b46  2**0
+ 18 .debug_line   00017824  00000000  00000000  00071c0e  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .debug_str    000db03f  00000000  00000000  0008909a  2**0
+ 19 .debug_str    000db058  00000000  00000000  00089432  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .comment      00000050  00000000  00000000  001640d9  2**0
+ 20 .comment      00000050  00000000  00000000  0016448a  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00007404  00000000  00000000  0016412c  2**2
+ 21 .debug_frame  00007494  00000000  00000000  001644dc  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -2531,7 +2531,7 @@ void setPWM() {
  8001a88:	20001320 	.word	0x20001320
 
 08001a8c <InitParams>:
-							.commandDescription = "Alarm masks vector",
+							.commandDescription = "Alarm masks vector (0 - masked)",
 							.type = UINT32_T,
 							.value.val_uint32_t = 0};
 
@@ -7097,7 +7097,10 @@ valueTypes getFreqSet(void) {
  8003b0c:	20001234 	.word	0x20001234
 
 08003b10 <commandParamList>:
-
+}
+valueTypes getAlarmMasks() {
+    return AlarmMasks.value;
+}
 
 void commandParamList() {
  8003b10:	b5b0      	push	{r4, r5, r7, lr}

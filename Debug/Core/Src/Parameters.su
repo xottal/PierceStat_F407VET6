@@ -151,5 +151,9 @@
 ../Core/Src/Parameters.c:1586:12:getFreq	4	static
 ../Core/Src/Parameters.c:1590:6:setFreqSet	16	static
 ../Core/Src/Parameters.c:1599:12:getFreqSet	4	static
-../Core/Src/Parameters.c:1604:6:commandParamList	168	static
-../Core/Src/Parameters.c:1622:6:commandSaveFlash	8	static
+../Core/Src/Parameters.c:1603:6:setAlarms	16	static
+../Core/Src/Parameters.c:1607:12:getAlarms	4	static
+../Core/Src/Parameters.c:1611:6:setAlarmMasks	16	static
+../Core/Src/Parameters.c:1615:12:getAlarmMasks	4	static
+../Core/Src/Parameters.c:1619:6:commandParamList	168	static
+../Core/Src/Parameters.c:1637:6:commandSaveFlash	8	static

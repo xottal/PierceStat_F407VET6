@@ -230,6 +230,11 @@ valueTypes getFreq();
 bool setFreqSet(valueTypes value);
 valueTypes getFreqSet();
 
+bool setAlarms(valueTypes value);
+valueTypes getAlarms();
+bool setAlarmMasks(valueTypes value);
+valueTypes getAlarmMasks();
+
 void InitParams();
 void commandParamList();
 void commandSaveFlash();
