@@ -287,7 +287,7 @@ ParStruct Temp1_Max = {	.commandNumber = 239,
 							.isFlash = true,
 							.get = getTemp1_Max,
 							.set = setTemp1_Max,
-                            .value.val_float = -10.0,
+                            .value.val_float = 100.0,
                             .valueAbsMin.val_float = -55.0,
                             .valueAbsMax.val_float = 150.0};
 ParStruct Temp2_Min = {	.commandNumber = 240,
@@ -305,7 +305,7 @@ ParStruct Temp2_Max = {	.commandNumber = 241,
 							.isFlash = true,
 							.get = getTemp2_Max,
 							.set = setTemp2_Max,
-                            .value.val_float = -10.0,
+                            .value.val_float = 100.0,
                             .valueAbsMin.val_float = -55.0,
                             .valueAbsMax.val_float = 150.0};
 ParStruct Temp3_Min = {	.commandNumber = 242,
@@ -323,7 +323,7 @@ ParStruct Temp3_Max = {	.commandNumber = 243,
 							.isFlash = true,
 							.get = getTemp3_Max,
 							.set = setTemp3_Max,
-                            .value.val_float = -10.0,
+                            .value.val_float = 100.0,
                             .valueAbsMin.val_float = -55.0,
                             .valueAbsMax.val_float = 150.0};
 ParStruct Temp4_Min = {	.commandNumber = 244,
@@ -341,7 +341,7 @@ ParStruct Temp4_Max = {	.commandNumber = 245,
 							.isFlash = true,
 							.get = getTemp4_Max,
 							.set = setTemp4_Max,
-                            .value.val_float = -10.0,
+                            .value.val_float = 100.0,
                             .valueAbsMin.val_float = -55.0,
                             .valueAbsMax.val_float = 150.0};
 
@@ -651,22 +651,48 @@ ParStruct Freq = {			.commandNumber = 500,
 ParStruct FreqSet = {		.commandNumber = 501,
                             .commandDescription = "Pierce freq Set @Hz",
                             .type = FLOAT,
+							.isFlash = true,
 							.set = setFreqSet,
 							.get = getFreqSet,
                             .value.val_float = 1000000.0,
                             .valueAbsMin.val_float = 10000.0,
                             .valueAbsMax.val_float = 500000000.0};
+ParStruct FreqMin = {		.commandNumber = 502,
+                            .commandDescription = "Pierce freq Min @Hz",
+                            .type = FLOAT,
+							.isFlash = true,
+							.set = setFreqMin,
+							.get = getFreqMin,
+                            .value.val_float = 10000.0,
+                            .valueAbsMin.val_float = 10000.0,
+                            .valueAbsMax.val_float = 500000000.0};
+ParStruct FreqMax = {		.commandNumber = 503,
+                            .commandDescription = "Pierce freq Max @Hz",
+                            .type = FLOAT,
+							.isFlash = true,
+							.set = setFreqMax,
+							.get = getFreqMax,
+                            .value.val_float = 20000000.0,
+                            .valueAbsMin.val_float = 10000.0,
+                            .valueAbsMax.val_float = 500000000.0};
+
 
 ParStruct Alarms = {		.commandNumber = 700,
 							.commandDescription = "Alarms vector (1 - alarm)",
 							.type = UINT32_T,
 							.readOnly = true,
+							.set = setAlarms,
+							.get = getAlarms,
 							.value.val_uint32_t = 0};
 
 ParStruct AlarmMasks = {	.commandNumber = 800,
 							.commandDescription = "Alarm masks vector (0 - masked)",
 							.type = UINT32_T,
-							.value.val_uint32_t = 0};
+							.set = setAlarmMasks,
+							.get = getAlarmMasks,
+							.isFlash = true,
+							.value.val_uint32_t = 1};
+
 
 
 void InitParams() {
@@ -762,6 +788,8 @@ void InitParams() {
 
 	params[i++] = &Freq;
 	params[i++] = &FreqSet;
+	params[i++] = &FreqMin;
+	params[i++] = &FreqMax;
 
 	params[i++] = &Alarms;
 	params[i++] = &AlarmMasks;
@@ -1601,6 +1629,33 @@ bool setFreqSet(valueTypes value) {
 valueTypes getFreqSet(void) {
     return FreqSet.value;
 }
+
+bool setFreqMin(valueTypes value) {
+    if(value.val_float >= FreqMin.valueAbsMax.val_float ||
+       value.val_float <= FreqMin.valueAbsMin.val_float) {
+       return false;
+    } else {
+    	FreqMin.value = value;
+        return true;
+    }
+}
+valueTypes getFreqMin(void) {
+    return FreqMin.value;
+}
+bool setFreqMax(valueTypes value) {
+    if(value.val_float >= FreqMax.valueAbsMax.val_float ||
+       value.val_float <= FreqMax.valueAbsMin.val_float) {
+       return false;
+    } else {
+    	FreqMax.value = value;
+        return true;
+    }
+}
+valueTypes getFreqMax(void) {
+    return FreqMax.value;
+}
+
+
 
 bool setAlarms(valueTypes value) {
    Alarms.value = value;

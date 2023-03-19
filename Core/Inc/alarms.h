@@ -8,6 +8,9 @@
 #ifndef INC_ALARMS_H_
 #define INC_ALARMS_H_
 
-void handleAlarms();
+#include <stdbool.h>
+
+bool handleAlarms();
+void proceedAlarms();
 
 #endif /* INC_ALARMS_H_ */

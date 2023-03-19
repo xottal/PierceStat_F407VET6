@@ -173,7 +173,7 @@ void commandSearch() {
 			} else if(!strcmp(command, "*IDN?")) {
 				UARTtransmit(IDNstring);
 			} else if(command[0] == '$') {
-				char attr[10];
+				char attr[40];
 				int com;
 				sscanf(&command[1], "%d%s", &com, attr);
 				if(com < 100 || com > PARAMS_RANGE - 1) {
@@ -203,7 +203,6 @@ void commandSearch() {
 
 			free(*(commands + i));
 		}
-		printf("\n");
 		free(commands);
 	}
 }
@@ -215,6 +214,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     	RXbufferElem++;
     }
     else {
+
     	RXbuffer[RXbufferElem] = '\0';
     	commandSearch();
     	RXbufferElem = 0;

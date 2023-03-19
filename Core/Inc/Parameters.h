@@ -31,7 +31,7 @@ typedef union {
 
 typedef struct {
     uint16_t commandNumber; //Номер >= 101
-    char commandDescription[30]; //Описание для команды $100?
+    char commandDescription[50]; //Описание для команды $100?
     types type; //Ref to typeList
     bool isCommand; //Является виртуальной командой или хранит значение
     bool readOnly; //Хранимое значение редактируется через UART?
@@ -229,6 +229,11 @@ bool setFreq(valueTypes value);
 valueTypes getFreq();
 bool setFreqSet(valueTypes value);
 valueTypes getFreqSet();
+
+bool setFreqMin(valueTypes value);
+valueTypes getFreqMin();
+bool setFreqMax(valueTypes value);
+valueTypes getFreqMax();
 
 bool setAlarms(valueTypes value);
 valueTypes getAlarms();

@@ -29,6 +29,7 @@
 #include "thermosensors.h"
 #include "flashManag.h"
 #include "PID.h"
+#include "alarms.h"
 
 
 /* USER CODE END Includes */
@@ -87,10 +88,8 @@ uint32_t freq_PWM_MO = 84000000; //Hz
 uint32_t freq_PWM_CH1 = 100000; //Hz
 uint32_t freq_PWM_CH2 = 100000; //Hz
 
-
-
-
-
+//Global alarms
+bool globalAlarm = false;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -158,7 +157,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_TIM5_Init();
   MX_TIM6_Init();
-  MX_IWDG_Init();
+  //MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
   //Init flash reading
@@ -169,11 +168,6 @@ int main(void)
   //Global 100us clock start (RTC - 120 hours limit)
   HAL_TIM_Base_Start(&htim5);
 
-  //Gate PWMs init
-  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_1);
-  //HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_2);
-  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  //HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   //Set_U_Heater PWM (10 kHz, 16800)
   HAL_TIM_PWM_Start(&htim8, TIM_CHANNEL_3);
   //Timer @84MHz for clock reference
@@ -210,11 +204,6 @@ while (1)
 {
 	//Watch dog reset
 	HAL_IWDG_Refresh(&hiwdg);
-
-
-
-
-
 
     /* USER CODE END WHILE */
 
@@ -1003,7 +992,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 
 
 	}
-	else if(htim == &htim6) {
+	else if(htim == &htim6) { //100 ms
 
 		float ADC1res[6] = {0};
 		float ADC2res[4] = {0};
@@ -1027,7 +1016,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 		setTemp3((valueTypes)(getTempPt1000(ADC2res[2]/100.0f * getTemp3_coeff().val_float)));
 		setTemp4((valueTypes)(getTempPt1000(ADC2res[3]/100.0f * getTemp4_coeff().val_float)));
 
+		globalAlarm = handleAlarms();
+		if(globalAlarm) {
+			setCh1_OnOff((valueTypes)(bool)false);
+			setCh2_OnOff((valueTypes)(bool)false);
+		}
 		setPWM();
+
 	}
 
 }
